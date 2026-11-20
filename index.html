@@ -65,15 +65,15 @@ footer{max-width:1200px;padding:0 36px 30px;color:var(--muted);font-size:12.5px}
 }
 
 /* crimson band */
-.band{background:var(--accent);color:#fff;margin:-28px -36px 0;padding:30px 36px 92px;position:relative;overflow:hidden}
+.band{background:var(--accent);color:#fff;margin:-28px -36px 0;padding:30px 36px 92px;position:relative;overflow:hidden;display:flex;justify-content:space-between;align-items:flex-start;gap:16px 24px;flex-wrap:wrap}
 .band::after{content:"";position:absolute;right:-90px;top:-140px;width:520px;height:520px;border-radius:50%;border:64px solid rgba(255,255,255,.06);pointer-events:none}
 .band small{font-size:13px;opacity:.88}
 .band h2{font-size:28px;margin:4px 0 6px;color:#fff}
 .band p{font-size:14.5px;opacity:.92}
-.band .btn{position:absolute;right:36px;top:32px;z-index:2;background:#fff;color:var(--accent-dark);border-color:#fff;font-weight:600;padding:10px 16px;border-radius:10px}
+.band .btn{position:relative;flex:none;z-index:2;background:#fff;color:var(--accent-dark);border-color:#fff;font-weight:600;padding:10px 16px;border-radius:10px}
 .band .btn:hover{background:#FFF3F5}
 .tiles.over{margin-top:-74px;position:relative;z-index:1}
-@media (max-width:860px){.band{margin:-20px -16px 0;padding:22px 16px 86px}.band .btn{position:static;margin-top:14px;display:inline-block}}
+@media (max-width:860px){.band{margin:-20px -16px 0;padding:22px 16px 86px}}
 
 /* blocks */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
@@ -444,7 +444,7 @@ VIEWS.overview = () => {
   const stations = Object.keys(STATIONS).map(s => [s, inC.filter(f => f.station === s).length]);
   const maxS = Math.max(1, ...stations.map(x => x[1]));
   return `
-  <section class="band"><small>${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})} · JKIA Terminal 1A</small><h2>Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, Security Control Room</h2><p>${ready.length} strong match${ready.length===1?'':'es'} and ${pro.length} seat match${pro.length===1?'':'es'} waiting for you.</p><a class="btn" href="#log">+ Log a found item</a></section>
+  <section class="band"><div><small>${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})} · JKIA Terminal 1A</small><h2>Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, Security Control Room</h2><p>${ready.length} strong match${ready.length===1?'':'es'} and ${pro.length} seat match${pro.length===1?'':'es'} waiting for you.</p></div><a class="btn" href="#log">+ Log a found item</a></section>
   <div class="tiles over">
     <div class="tile"><div class="n">${inC.length}</div><div class="l">Items in custody</div></div>
     <div class="tile"><div class="n">${open.length}</div><div class="l">Open passenger reports</div></div>

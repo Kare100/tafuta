@@ -2,7 +2,7 @@
 
 **Tafuta** (Swahili for "find") is an AI-assisted lost & found matching and recovery system for airline operations. It was built as a working prototype for the **Kenya Airways Innovation Challenge 2026**, in response to the *Intelligent Digital Lost & Found* challenge brief.
 
-**Live demo:** _link coming soon_
+**Live demo:** [tafuta-blond.vercel.app](https://tafuta-blond.vercel.app)
 
 ## The problem
 
