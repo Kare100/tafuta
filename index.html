@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tafuta Lost &amp; Found</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: an airport operations console. Mono reference codes styled like luggage tags, status as pills, one tag-amber accent for anything that needs a human. */
+:root{
+  --bg:#eef2f1; --surface:#ffffff; --sunk:#f5f8f7; --ink:#14232a; --muted:#56676c; --line:#d3dddb;
+  --accent:#0d6b66; --accent-soft:#dcefed; --accent-ink:#ffffff; --tag:#f2b53a; --tag-ink:#3a2a05;
+  --good:#2b7a3d; --good-soft:#e1f1e4; --warn:#a86a10; --warn-soft:#fbefd9; --crit:#b0352e; --crit-soft:#f8e1df;
+  --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1618; --surface:#152024; --sunk:#111b1e; --ink:#e3ecea; --muted:#93a5a8; --line:#253539;
+  --accent:#3fb3a8; --accent-soft:#163633; --accent-ink:#06201d; --tag:#e9ab2e; --tag-ink:#2b1f03;
+  --good:#66c27a; --good-soft:#173322; --warn:#e3a646; --warn-soft:#352812; --crit:#ec7066; --crit-soft:#3a1c1a; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0e1618; --surface:#152024; --sunk:#111b1e; --ink:#e3ecea; --muted:#93a5a8; --line:#253539;
+  --accent:#3fb3a8; --accent-soft:#163633; --accent-ink:#06201d; --tag:#e9ab2e; --tag-ink:#2b1f03;
+  --good:#66c27a; --good-soft:#173322; --warn:#e3a646; --warn-soft:#352812; --crit:#ec7066; --crit-soft:#3a1c1a; color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+h2{font-size:26px} h3{font-size:19px}
+p{margin:0}
+a{color:var(--accent)}
+.mono{font-family:var(--mono);font-size:13px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--tag);outline-offset:2px}
+
+/* top bar */
+.top{background:var(--ink);color:var(--bg);}
+:root[data-theme="dark"] .top{background:#081012;color:var(--ink)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .top{background:#081012;color:var(--ink)}}
+.top-in{max-width:1240px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:.02em}
+.brand span{font-size:13px;opacity:.75}
+.mode{margin-left:auto;display:flex;background:rgba(255,255,255,.08);border-radius:999px;padding:3px}
+.mode button{border:0;background:transparent;color:inherit;padding:6px 14px;border-radius:999px;cursor:pointer;font-size:14px}
+.mode button[aria-pressed="true"]{background:var(--tag);color:var(--tag-ink);font-weight:600}
+.banner{background:var(--accent);color:var(--accent-ink);font-size:13px}
+.banner div{max-width:1240px;margin:0 auto;padding:6px 20px}
+nav.tabs{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+nav.tabs div{max-width:1240px;margin:0 auto;padding:0 12px;display:flex;gap:2px;overflow-x:auto}
+nav.tabs a{display:block;padding:12px 12px;color:var(--muted);text-decoration:none;border-bottom:3px solid transparent;white-space:nowrap;font-weight:500}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+nav.tabs a .ct{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--tag);color:var(--tag-ink);font-size:12px;text-align:center;font-weight:600}
+main{max-width:1240px;margin:0 auto;padding:22px 20px 60px;display:grid;gap:18px}
+
+/* blocks */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.tile .n{font-family:var(--display);font-size:36px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .l{color:var(--muted);font-size:13px}
+.tile.attn{border-left:5px solid var(--tag)}
+.head{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stack{display:grid;gap:10px;align-content:start}
+.li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center}
+.li.top-al{align-items:start}
+.tagid{display:inline-block;font-family:var(--mono);font-size:12.5px;background:var(--tag);color:var(--tag-ink);padding:1px 7px;border-radius:3px;letter-spacing:.02em;white-space:nowrap}
+.refid{display:inline-block;font-family:var(--mono);font-size:12.5px;border:1px solid var(--ink);padding:0 6px;border-radius:3px;white-space:nowrap}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.p-good{background:var(--good-soft);color:var(--good)} .p-warn{background:var(--warn-soft);color:var(--warn)} .p-crit{background:var(--crit-soft);color:var(--crit)} .p-acc{background:var(--accent-soft);color:var(--accent)} .p-mut{background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 13px;border-radius:6px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.amb{background:var(--tag);border-color:var(--tag);color:var(--tag-ink)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:600;text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl{overflow-x:auto}
+.num{font-variant-numeric:tabular-nums}
+
+/* forms */
+form .f{display:grid;gap:4px}
+label{font-size:13px;font-weight:500;color:var(--muted)}
+input[type=text],input[type=datetime-local],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--sunk)}
+textarea{min-height:76px;resize:vertical}
+.fgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--ink);font-weight:400}
+.hint{font-size:12.5px;color:var(--muted)}
+
+/* match */
+.match{display:grid;grid-template-columns:minmax(240px,1fr) minmax(280px,1.4fr);gap:0;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.match>div{padding:14px 16px;align-content:start}
+.match .lhs{background:var(--sunk);border-right:1px solid var(--line)}
+@media (max-width:720px){.match{grid-template-columns:1fr}.match .lhs{border-right:0;border-bottom:1px solid var(--line)}}
+.cand{border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:grid;gap:8px}
+.cand.best{border-left:5px solid var(--accent)}
+.conf{font-family:var(--display);font-size:30px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.c-high{color:var(--good)} .c-medium{color:var(--warn)} .c-low{color:var(--muted)}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:3px 10px;align-items:center;font-size:12.5px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.clock{height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:80px}
+.clock i{display:block;height:100%}
+.thumb{width:44px;height:44px;border-radius:6px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb svg{width:24px;height:24px}
+.steps{display:flex;gap:0;flex-wrap:wrap}
+.steps span{font-size:12px;padding:3px 10px;border:1px solid var(--line);margin-right:-1px;color:var(--muted);background:var(--sunk)}
+.steps span.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.steps span:first-child{border-radius:999px 0 0 999px}.steps span:last-child{border-radius:0 999px 999px 0}
+.feed{display:grid;gap:0}
+.feed>div{padding:9px 0;border-bottom:1px dashed var(--line);display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:14px}
+.feed>div:last-child{border-bottom:0}
+.msg{background:var(--sunk);border:1px solid var(--line);border-radius:10px 10px 10px 2px;padding:9px 12px;font-size:14px}
+.callout{border-left:5px solid var(--tag);background:var(--warn-soft);padding:12px 14px;border-radius:6px}
+.callout.acc{border-left-color:var(--accent);background:var(--accent-soft)}
+
+/* timeline */
+.tl{display:grid;gap:0;margin-top:6px}
+.tl>div{display:grid;grid-template-columns:22px 1fr;gap:10px;padding-bottom:14px;position:relative}
+.tl>div::before{content:"";position:absolute;left:10px;top:20px;bottom:0;width:2px;background:var(--line)}
+.tl>div:last-child::before{display:none}
+.dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface)}
+.tl .done .dot{background:var(--accent);border-color:var(--accent)}
+.tl .now .dot{background:var(--tag);border-color:var(--tag)}
+
+/* process compare */
+.flow{display:grid;gap:8px;counter-reset:s}
+.flow li{list-style:none;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start}
+.flow li::before{counter-increment:s;content:counter(s);font-family:var(--mono);font-size:12px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);border:1px solid var(--line)}
+.flow.new li::before{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.flow{padding:0;margin:0}
+.integ{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.integ div{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--sunk)}
+.integ b{display:block;margin-bottom:2px}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(5,15,18,.55);display:grid;place-items:center;padding:16px;z-index:20}
+.modal{background:var(--surface);border-radius:10px;max-width:620px;width:100%;max-height:90%;overflow:auto;padding:20px;display:grid;gap:14px;border:1px solid var(--line)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:30;max-width:90%}
+footer{max-width:1240px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:13px;display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}
+@media (prefers-reduced-motion: no-preference){.cand,.card,.tile{transition:border-color .15s}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand"><b>TAFUTA</b><span>Lost &amp; Found recovery for airline operations</span></div>
+  <div class="mode" role="group" aria-label="Switch view">
+    <button id="m-staff" type="button">Staff console</button>
+    <button id="m-pax" type="button">Passenger view</button>
+  </div>
+</div></header>
+<div class="banner"><div>Working prototype for the Kenya Airways Innovation Challenge 2026 (Intelligent Digital Lost &amp; Found brief). All people, bookings and items are fictional demo data. Messages are simulated.</div></div>
+<nav class="tabs" aria-label="Sections"><div id="tabs"></div></nav>
+<main id="app"></main>
+<footer><span>Tafuta prototype · Valerie Mwangi, USIU-Africa · v0.1</span><button class="btn ghost small" id="reset" type="button">Reset demo data</button></footer>
+<div id="layer"></div>
+
+<script>
+/* ---------- Tafuta matching engine (no DOM) ---------- */
+const DAY = 864e5, HOUR = 36e5, HOLD_DAYS = 90;
+const CATS = ['Electronics','Bags & luggage','Documents & IDs','Clothing','Jewellery & watches','Eyewear','Toys','Personal items','Other'];
+const RELATED = {'Bags & luggage|Personal items':0.4,'Jewellery & watches|Personal items':0.4,'Eyewear|Personal items':0.4,'Electronics|Personal items':0.3,'Documents & IDs|Personal items':0.4,'Clothing|Personal items':0.3,'Toys|Personal items':0.3};
+const COLOURS = {black:'dark',grey:'grey',silver:'grey',white:'light',cream:'light',blue:'blue',navy:'blue',red:'red',maroon:'red',green:'green',olive:'green',brown:'brown',tan:'brown',beige:'brown',pink:'pink',purple:'purple',yellow:'gold',gold:'gold',orange:'orange',multicoloured:'multi'};
+const STOP = new Set('a an the and or of with in on at to for my is it its was has have had from by i me this that very some small large big one two inside think left near also there their our we item lost found'.split(' '));
+const SYN = {mobile:'phone',smartphone:'phone',cellphone:'phone',handset:'phone',galaxy:'phone',iphone:'phone',macbook:'laptop',rucksack:'backpack',knapsack:'backpack',daypack:'backpack',coat:'jacket',hoodie:'jacket',sweater:'jacket',jumper:'jacket',fleece:'jacket',spectacles:'glasses',specs:'glasses',eyeglasses:'glasses',sunglasses:'glasses',airpods:'earbuds',earphones:'earbuds',headphones:'earbuds',purse:'wallet',ipad:'tablet',flask:'bottle',tumbler:'bottle',plush:'teddy',bear:'teddy',toy:'teddy',powerbank:'charger',adapter:'charger',cable:'charger',tortoise:'tortoiseshell',gray:'grey',cover:'case',kindle:'ereader',cellular:'phone'};
+const CANON = new Set(Object.values(SYN));
+
+function toks(s){
+  return (s||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
+    .filter(w => w.length > 1 && !STOP.has(w))
+    .map(w => { w = SYN[w] || w; if (!CANON.has(w) && w.length > 3 && w.endsWith('s') && !w.endsWith('ss')) w = w.slice(0,-1); return SYN[w] || w; });
+}
+const docText = x => [x.title, x.desc, x.brand, x.colour].join(' ');
+
+function buildIdf(docs){
+  const df = {}, N = docs.length;
+  docs.forEach(d => new Set(toks(docText(d))).forEach(t => df[t] = (df[t]||0) + 1));
+  const idf = {}; for (const t in df) idf[t] = Math.log(1 + N/df[t]);
+  idf.__default = Math.log(1 + N);
+  return idf;
+}
+function vec(x, idf){
+  const v = {}; toks(docText(x)).forEach(t => v[t] = (v[t]||0) + 1);
+  for (const t in v) v[t] *= (idf[t] || idf.__default);
+  return v;
+}
+function cosine(a, b){
+  let d = 0, na = 0, nb = 0;
+  for (const t in a){ na += a[t]*a[t]; if (b[t]) d += a[t]*b[t]; }
+  for (const t in b) nb += b[t]*b[t];
+  return na && nb ? d/Math.sqrt(na*nb) : 0;
+}
+function colourScore(a, b){
+  if (!a || !b) return null;
+  if (a === b) return 1;
+  if (COLOURS[a] && COLOURS[a] === COLOURS[b]) return 0.6;
+  if (a === 'multicoloured' || b === 'multicoloured') return 0.4;
+  return 0;
+}
+/* r = lost report, f = found item. Returns null if the pair is impossible. */
+function scorePair(r, f, idf){
+  const dh = (f.foundAt - r.lostAt) / HOUR;
+  if (dh < -24) return null;                       // found long before it was lost
+  const parts = [];
+  const cat = r.cat === f.cat ? 1 : (RELATED[r.cat+'|'+f.cat] || RELATED[f.cat+'|'+r.cat] || 0);
+  parts.push({key:'cat', label:'Category', w:20, s:cat});
+  const vr = vec(r, idf), vf = vec(f, idf), c = cosine(vr, vf);
+  const text = Math.min(1, c * 1.35);
+  const shared = Object.keys(vr).filter(t => vf[t]).sort((x,y) => (idf[y]||0) - (idf[x]||0)).slice(0,5);
+  parts.push({key:'text', label:'Description', w:30, s:text, note: shared.length ? 'Shared: ' + shared.join(', ') : 'No shared details'});
+  const col = colourScore(r.colour, f.colour);
+  if (col !== null) parts.push({key:'colour', label:'Colour', w:12, s:col});
+  if (r.brand && f.brand) parts.push({key:'brand', label:'Brand', w:12, s: r.brand.trim().toLowerCase() === f.brand.trim().toLowerCase() ? 1 : 0});
+  let loc, locNote;
+  if (r.flight && f.flight && r.flight === f.flight){
+    if (r.seat && f.seat && r.seat.toUpperCase() === f.seat.toUpperCase()){ loc = 1; locNote = 'Same flight and seat'; }
+    else { loc = 0.85; locNote = 'Same flight'; }
+  } else if (r.station === f.station){ loc = 0.6; locNote = 'Same station'; }
+  else { loc = 0.15; locNote = 'Different station'; }
+  parts.push({key:'loc', label:'Where', w:14, s:loc, note:locNote});
+  const time = dh <= 48 ? 1 : Math.max(0.2, 1 - (dh - 48) / (24*28) * 0.8);
+  parts.push({key:'time', label:'When', w:12, s:time, note: dh < 0 ? 'Logged just before the reported time' : 'Found ' + (dh < 24 ? Math.round(Math.max(dh,0)) + ' h' : Math.round(dh/24) + ' days') + ' after loss'});
+  if (cat === 0 && text < 0.3) return null;
+  const W = parts.reduce((a,p) => a + p.w, 0);
+  const score = Math.min(0.99, parts.reduce((a,p) => a + p.w * p.s, 0) / W);
+  return {score, parts};
+}
+function band(score){ return score >= 0.75 ? 'high' : score >= 0.55 ? 'medium' : 'low'; }
+
+
+/* ---------- Demo data (fictional) ---------- */
+const STATIONS = {NBO:'Nairobi (JKIA)', MBA:'Mombasa', KIS:'Kisumu', EDL:'Eldoret'};
+const KQ_CUSTODY = 'KQ Security Control Room';
+const KAA_CUSTODY = 'KAA Security, JKIA';
+
+/* Stand-in for the booking system (PSS) manifest lookup */
+function demoManifest(now){
+  return [
+    {pnr:'K7QM2D', first:'Wanjiru', last:'Kamau',  flight:'KQ101', route:'LHR–NBO', seat:'14A', dep: now - 1.45*DAY, contact:'+254 712 ••• 483', channel:'WhatsApp'},
+    {pnr:'R5JD7N', first:'Lucy',    last:'Achieng',flight:'KQ101', route:'LHR–NBO', seat:'22C', dep: now - 1.45*DAY, contact:'lucy.a•••@gmail.com', channel:'Email'},
+    {pnr:'P3ZT8L', first:'Daniel',  last:'Otieno', flight:'KQ604', route:'NBO–MBA', seat:'9C',  dep: now - 4.1*DAY,  contact:'+254 722 ••• 916', channel:'KQ app'},
+    {pnr:'M9RA4C', first:'Amina',   last:'Hassan', flight:'KQ605', route:'MBA–NBO', seat:'3F',  dep: now - 2.05*DAY, contact:'+254 733 ••• 205', channel:'SMS'},
+    {pnr:'W2HN6Y', first:'Peter',   last:'Mutua',  flight:'KQ310', route:'DXB–NBO', seat:'23C', dep: now - 12.5*DAY, contact:'+254 701 ••• 377', channel:'WhatsApp'},
+    {pnr:'B8LK3S', first:'Grace',   last:'Njeri',  flight:'KQ418', route:'NBO–JNB', seat:'31B', dep: now - 1.0*DAY,  contact:'+254 710 ••• 058', channel:'WhatsApp'},
+    {pnr:'T4CE9V', first:'Brian',   last:'Kiprop', flight:'KQ532', route:'ACC–NBO', seat:'6D',  dep: now - 9.4*DAY,  contact:'+254 720 ••• 640', channel:'SMS'}
+  ];
+}
+
+function demoState(now){
+  const f = (o) => Object.assign({brand:'', flight:'', seat:'', photo:'', status:'in_custody', custodian:KQ_CUSTODY, chain:[], matchedReport:null}, o);
+  const found = [
+    f({id:'FND-NBO-00141', cat:'Electronics', title:'Black Samsung phone, clear case', desc:'Samsung Galaxy in a clear case with a boarding pass tucked behind it. Screen protector cracked.', colour:'black', brand:'Samsung', station:'NBO', spot:'Aircraft cabin', flight:'KQ101', seat:'14A', foundBy:'Cabin crew', foundAt: now - 1.2*DAY, private:'Lock-screen photo of two children on a beach'}),
+    f({id:'FND-NBO-00144', cat:'Electronics', title:'Kindle e-reader in green cover', desc:'Black Kindle in a green fabric cover, left in the seat pocket.', colour:'black', brand:'Amazon', station:'NBO', spot:'Aircraft cabin', flight:'KQ101', seat:'22C', foundBy:'Cabin crew', foundAt: now - 1.15*DAY, private:'Open book is a Swahili novel'}),
+    f({id:'FND-NBO-00138', cat:'Bags & luggage', title:'Navy backpack with laptop sleeve', desc:'Herschel rucksack with laptop sleeve, keyring with a small Kenyan flag, two notebooks inside.', colour:'navy', brand:'Herschel', station:'NBO', spot:'Security screening, Terminal 1A', foundBy:'KAA Security', foundAt: now - 4*DAY, custodian:KAA_CUSTODY, private:'Notebooks labelled "Strategic Mgmt"'}),
+    f({id:'FND-MBA-00052', cat:'Eyewear', title:'Glasses in brown leather case', desc:'Tortoiseshell spectacles in a brown leather case with a cleaning cloth.', colour:'brown', brand:'Ray-Ban', station:'MBA', spot:'Boarding gate 2', flight:'KQ605', foundBy:'Gate agent', foundAt: now - 2*DAY, private:'Initials A.H. embossed on the case'}),
+    f({id:'FND-NBO-00129', cat:'Electronics', title:'White AirPods Pro', desc:'AirPods Pro in charging case, small sticker with initials on the case.', colour:'white', brand:'Apple', station:'NBO', spot:'Aircraft cabin', flight:'KQ310', seat:'23C', foundBy:'Cabin cleaning', foundAt: now - 12*DAY, private:'Sticker reads "PM"', status:'on_hold', matchedReport:'NBOKQ10452'}),
+    f({id:'FND-KIS-00019', cat:'Personal items', title:'Green insulated water bottle', desc:'Metal flask covered in travel stickers.', colour:'green', brand:'Hydro Flask', station:'KIS', spot:'KQ sales office, Kisumu', foundBy:'Sales office staff', foundAt: now - 6*DAY, private:'Sticker from Lake Bogoria'}),
+    f({id:'FND-NBO-00097', cat:'Clothing', title:'Grey fleece hoodie', desc:'Grey hoodie, size M, running club logo on the back.', colour:'grey', station:'NBO', spot:'Baggage reclaim belt 4', foundBy:'Ground handling', foundAt: now - 63*DAY, private:'Name tag inside collar: "K.O."'}),
+    f({id:'FND-NBO-00086', cat:'Jewellery & watches', title:'Gold bracelet with heart charm', desc:'Thin gold chain bracelet with a single heart charm.', colour:'gold', station:'NBO', spot:'KQ lounge, Terminal 1A', foundBy:'Lounge staff', foundAt: now - 82*DAY, private:'Charm engraved "Always"'}),
+    f({id:'FND-NBO-00071', cat:'Personal items', title:'Brown leather wallet', desc:'Brown leather bifold wallet, no cards or ID inside, some foreign coins.', colour:'brown', station:'NBO', spot:'Boarding gate 9', foundBy:'Gate agent', foundAt: now - 93*DAY, private:'Coins are Ghanaian cedis'}),
+    f({id:'FND-NBO-00133', cat:'Electronics', title:'Silver MacBook Air', desc:'MacBook Air with coffee-cup and mountain stickers on the lid.', colour:'silver', brand:'Apple', station:'NBO', spot:'Aircraft cabin', flight:'KQ532', seat:'6D', foundBy:'Cabin crew', foundAt: now - 9.2*DAY, private:'Mountain sticker says "Kilimanjaro 2025"', status:'released', matchedReport:'NBOKQ10431'})
+  ];
+  found[2].chain = [{t: found[2].foundAt, from:'Found', to:KAA_CUSTODY, by:'KAA Security officer'}];
+  found.forEach(x => { if (!x.chain.length) x.chain = [{t:x.foundAt + 0.05*DAY, from:'Found by ' + x.foundBy, to:KQ_CUSTODY, by:x.foundBy}]; });
+
+  const r = (o) => Object.assign({brand:'', seat:'', status:'open', matchedItem:null, dismissed:[]}, o);
+  const reports = [
+    r({id:'NBOKQ10483', pnr:'K7QM2D', name:'Wanjiru Kamau', contact:'+254 712 ••• 483', channel:'WhatsApp', flight:'KQ101', seat:'14A', station:'NBO', cat:'Electronics', title:'Black Samsung phone', desc:'Samsung Galaxy, black, clear cover. My boarding pass might be inside the case. Left it on the plane.', colour:'black', brand:'Samsung', lostAt: now - 1.3*DAY, reportedAt: now - 0.9*DAY}),
+    r({id:'NBOKQ10476', pnr:'P3ZT8L', name:'Daniel Otieno', contact:'+254 722 ••• 916', channel:'KQ app', flight:'KQ604', station:'NBO', cat:'Bags & luggage', title:'Blue backpack with laptop sleeve', desc:'Dark blue Herschel backpack with a Kenya flag keyring and notebooks inside. I think I left it at security screening.', colour:'blue', brand:'Herschel', lostAt: now - 4.2*DAY, reportedAt: now - 3.9*DAY}),
+    r({id:'MBAKQ10491', pnr:'M9RA4C', name:'Amina Hassan', contact:'+254 733 ••• 205', channel:'SMS', flight:'KQ605', station:'MBA', cat:'Eyewear', title:'Reading glasses', desc:'Tortoiseshell glasses in a brown case, left at the gate in Mombasa.', colour:'brown', lostAt: now - 2.1*DAY, reportedAt: now - 1.8*DAY}),
+    r({id:'NBOKQ10452', pnr:'W2HN6Y', name:'Peter Mutua', contact:'+254 701 ••• 377', channel:'WhatsApp', flight:'KQ310', seat:'23C', station:'NBO', cat:'Electronics', title:'AirPods Pro', desc:'White AirPods Pro, the case has an initials sticker.', colour:'white', brand:'Apple', lostAt: now - 12.3*DAY, reportedAt: now - 11.6*DAY, status:'notified', matchedItem:'FND-NBO-00129'}),
+    r({id:'NBOKQ10495', pnr:'B8LK3S', name:'Grace Njeri', contact:'+254 710 ••• 058', channel:'WhatsApp', flight:'KQ418', station:'NBO', cat:'Bags & luggage', title:'Black leather handbag', desc:'Black leather handbag with a gold zip, left near gate 14.', colour:'black', lostAt: now - 1*DAY, reportedAt: now - 0.7*DAY}),
+    r({id:'NBOKQ10431', pnr:'T4CE9V', name:'Brian Kiprop', contact:'+254 720 ••• 640', channel:'SMS', flight:'KQ532', seat:'6D', station:'NBO', cat:'Electronics', title:'MacBook Air', desc:'Silver MacBook Air with stickers on the lid.', colour:'silver', brand:'Apple', lostAt: now - 9.4*DAY, reportedAt: now - 9*DAY, status:'returned', matchedItem:'FND-NBO-00133', release:{t: now - 7.8*DAY, method:'Collected at desk, JKIA', by:'Brian Kiprop', condition:'Good, no damage', officer:'M. Wafula'}})
+  ];
+  const audit = [
+    {t: now - 9.2*DAY, actor:'Cabin crew KQ532', action:'Logged found item', ref:'FND-NBO-00133'},
+    {t: now - 9*DAY, actor:'Brian Kiprop (SMS)', action:'Reported lost item', ref:'NBOKQ10431'},
+    {t: now - 9*DAY, actor:'Tafuta engine', action:'Auto-alert: 94% match with FND-NBO-00133', ref:'NBOKQ10431'},
+    {t: now - 7.8*DAY, actor:'M. Wafula, KQ Security', action:'Released item, ownership verified, release form signed', ref:'FND-NBO-00133'},
+    {t: now - 12*DAY, actor:'Cabin cleaning KQ310', action:'Logged found item', ref:'FND-NBO-00129'},
+    {t: now - 11.6*DAY, actor:'Peter Mutua (WhatsApp)', action:'Reported lost item', ref:'NBOKQ10452'},
+    {t: now - 11.5*DAY, actor:'J. Mutiso, KQ Security', action:'Notified passenger of possible match FND-NBO-00129', ref:'NBOKQ10452'},
+    {t: now - 4*DAY, actor:'KAA Security officer', action:'Logged found item (held by KAA)', ref:'FND-NBO-00138'},
+    {t: now - 1.2*DAY, actor:'Cabin crew KQ101', action:'Logged found item', ref:'FND-NBO-00141'},
+    {t: now - 1.15*DAY, actor:'Cabin crew KQ101', action:'Logged found item', ref:'FND-NBO-00144'}
+  ];
+  const notices = [
+    {t: now - 11.5*DAY, to:'Peter Mutua · WhatsApp', ref:'NBOKQ10452', msg:'Jambo Peter, we may have found your AirPods Pro (ref NBOKQ10452). Please bring your ID and boarding pass to the KQ Lost & Found desk, JKIA Terminal 1A, or reply to arrange forwarding.'},
+    {t: now - 7.8*DAY, to:'Brian Kiprop · SMS', ref:'NBOKQ10431', msg:'Your MacBook Air (ref NBOKQ10431) was released to you today at JKIA. Asante for flying Kenya Airways.'}
+  ];
+  return {found, reports, audit, notices, seq:{found:{NBO:145, MBA:53, KIS:20, EDL:9}, report:10496}};
+}
+
+</script>
+<script>
+/* ---------- state ---------- */
+const NOW = Date.now();
+const KEY = 'tafuta-demo-v1';
+let S, MANIFEST = demoManifest(NOW);
+function load(){ try{ const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); }catch(e){} return demoState(NOW); }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+S = load();
+const OFFICER = 'J. Mutiso, KQ Security';
+
+/* ---------- helpers ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = t => new Date(t).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+const fmtD = t => new Date(t).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+const ago = t => { const h = (Date.now() - t)/HOUR; return h < 1 ? 'just now' : h < 24 ? Math.round(h) + ' h ago' : Math.round(h/24) + ' d ago'; };
+const daysIn = f => Math.floor((Date.now() - f.foundAt)/DAY);
+const findItem = id => S.found.find(f => f.id === id);
+const findRep = id => S.reports.find(r => r.id === id);
+function log(actor, action, ref){ S.audit.push({t:Date.now(), actor, action, ref}); }
+function notify(r, msg){ S.notices.push({t:Date.now(), to: r.name + ' · ' + r.channel, ref:r.id, msg}); }
+function toast(m){ const el = document.createElement('div'); el.className='toast'; el.setAttribute('role','status'); el.textContent=m; document.body.appendChild(el); setTimeout(()=>el.remove(), 3200); }
+const ICONS = {
+  'Electronics':'<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+  'Bags & luggage':'<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5h6v3"/>',
+  'Documents & IDs':'<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  'Clothing':'<path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-1 2-3 2-4 2s-3 0-4-2z"/>',
+  'Jewellery & watches':'<circle cx="12" cy="14" r="6"/><path d="M9 4h6l-1 4h-4z"/>',
+  'Eyewear':'<circle cx="7" cy="14" r="3.5"/><circle cx="17" cy="14" r="3.5"/><path d="M10.5 14h3M3.5 13 3 9M20.5 13l.5-4"/>',
+  'Toys':'<circle cx="12" cy="13" r="6"/><circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="7" r="2.2"/>',
+  'Personal items':'<rect x="8" y="2" width="8" height="4" rx="1"/><rect x="7" y="6" width="10" height="16" rx="3"/>',
+  'Other':'<rect x="4" y="6" width="16" height="13" rx="1"/><path d="M4 10h16"/>'
+};
+const thumb = f => `<div class="thumb" aria-hidden="true">${f.photo ? `<img src="${f.photo}" alt="">` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">${ICONS[f.cat]||ICONS.Other}</svg>`}</div>`;
+const statusPill = {
+  in_custody:'<span class="pill p-acc">In custody</span>', on_hold:'<span class="pill p-warn">Held for claim</span>',
+  released:'<span class="pill p-good">Returned</span>', customs:'<span class="pill p-mut">Handed to Customs</span>'
+};
+const repPill = {
+  open:'<span class="pill p-acc">Searching</span>', notified:'<span class="pill p-warn">Passenger notified</span>',
+  returned:'<span class="pill p-good">Returned</span>'
+};
+function clock(f){
+  const d = daysIn(f), pct = Math.min(100, d/HOLD_DAYS*100);
+  const col = d >= HOLD_DAYS ? 'var(--crit)' : d >= 60 ? 'var(--warn)' : 'var(--accent)';
+  const label = d >= HOLD_DAYS ? 'Due for Customs' : (HOLD_DAYS - d) + ' days left';
+  return `<div class="stack" style="gap:3px"><div class="clock" role="img" aria-label="Day ${d} of ${HOLD_DAYS}"><i style="width:${pct}%;background:${col}"></i></div><span class="small ${d>=60?'':'muted'}" style="${d>=60?'color:'+col:''}">Day ${d} of ${HOLD_DAYS} · ${label}</span></div>`;
+}
+
+/* ---------- matching over state ---------- */
+function idf(){ return buildIdf([...S.found, ...S.reports]); }
+function candidatesFor(r, I = idf()){
+  return S.found.filter(f => (f.status === 'in_custody' || f.id === r.matchedItem) && !r.dismissed.includes(f.id))
+    .map(f => ({f, m: scorePair(r, f, I)})).filter(x => x.m && x.m.score >= 0.4)
+    .sort((a,b) => b.m.score - a.m.score);
+}
+function bestFor(f, I = idf()){
+  let best = null;
+  S.reports.filter(r => r.status === 'open' && !r.dismissed.includes(f.id)).forEach(r => {
+    const m = scorePair(r, f, I); if (m && (!best || m.score > best.m.score)) best = {r, m};
+  });
+  return best;
+}
+function manifestFor(f){
+  if (!f.flight || !f.seat) return null;
+  return MANIFEST.find(p => p.flight === f.flight && p.seat.toUpperCase() === f.seat.toUpperCase() && Math.abs(p.dep - f.foundAt) < 2*DAY) || null;
+}
+function proactiveList(){
+  return S.found.filter(f => f.status === 'in_custody' && !f.proactive && manifestFor(f)
+    && !S.reports.some(r => r.pnr === manifestFor(f).pnr && r.status !== 'returned'));
+}
+
+/* ---------- routing ---------- */
+const STAFF_TABS = [['overview','Overview'],['queue','Match queue'],['items','Custody register'],['log','Log found item'],['customs','Customs handover'],['audit','Audit & messages'],['fit','How it fits KQ']];
+const PAX_TABS = [['report','Report a lost item'],['track','Track my report']];
+function route(){
+  const h = (location.hash || '').slice(1);
+  const all = [...STAFF_TABS, ...PAX_TABS].map(t => t[0]);
+  return all.includes(h) ? h : 'overview';
+}
+function counts(){
+  const I = idf();
+  return {
+    queue: S.reports.filter(r => r.status === 'open' && candidatesFor(r, I).some(c => c.m.score >= 0.75)).length + proactiveList().length,
+    customs: S.found.filter(f => f.status === 'in_custody' && daysIn(f) >= HOLD_DAYS).length
+  };
+}
+function render(){
+  const v = route(), pax = PAX_TABS.some(t => t[0] === v);
+  $('#m-staff').setAttribute('aria-pressed', String(!pax)); $('#m-pax').setAttribute('aria-pressed', String(pax));
+  const c = pax ? {} : counts();
+  $('#tabs').innerHTML = (pax ? PAX_TABS : STAFF_TABS).map(([k,l]) => `<a href="#${k}" ${k===v?'aria-current="page"':''}>${l}${c[k]?`<span class="ct">${c[k]}</span>`:''}</a>`).join('');
+  $('#app').innerHTML = VIEWS[v]();
+  (BIND[v] || (()=>{}))();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', render);
+$('#m-staff').onclick = () => location.hash = 'overview';
+$('#m-pax').onclick = () => location.hash = 'report';
+$('#reset').onclick = () => { try{ localStorage.removeItem(KEY); }catch(e){} S = demoState(Date.now()); render(); toast('Demo data reset'); };
+
+/* ---------- views ---------- */
+const VIEWS = {}, BIND = {};
+
+VIEWS.overview = () => {
+  const I = idf();
+  const inC = S.found.filter(f => f.status === 'in_custody' || f.status === 'on_hold');
+  const open = S.reports.filter(r => r.status !== 'returned');
+  const ready = S.reports.filter(r => r.status === 'open' && candidatesFor(r, I).some(c => c.m.score >= 0.75));
+  const returned = S.reports.filter(r => r.status === 'returned').length;
+  const closed = returned + S.found.filter(f => f.status === 'customs').length;
+  const pro = proactiveList();
+  const aging = S.found.filter(f => f.status === 'in_custody' && daysIn(f) >= 60).sort((a,b) => a.foundAt - b.foundAt);
+  const kaa = S.found.filter(f => f.status === 'in_custody' && f.custodian === KAA_CUSTODY);
+  const stations = Object.keys(STATIONS).map(s => [s, inC.filter(f => f.station === s).length]);
+  const maxS = Math.max(1, ...stations.map(x => x[1]));
+  return `
+  <div class="head"><div><h2>Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, JKIA Security Control Room</h2><p class="muted">Everything found across the network, matched against what passengers have reported.</p></div>
+  <a class="btn amb" href="#log">Log a found item</a></div>
+  <div class="tiles">
+    <div class="tile"><div class="n">${inC.length}</div><div class="l">Items in custody</div></div>
+    <div class="tile"><div class="n">${open.length}</div><div class="l">Open passenger reports</div></div>
+    <div class="tile ${ready.length?'attn':''}"><div class="n">${ready.length}</div><div class="l">High-confidence matches to action</div></div>
+    <div class="tile ${pro.length?'attn':''}"><div class="n">${pro.length}</div><div class="l">Seat matches: passenger can be told first</div></div>
+    <div class="tile"><div class="n">${closed ? Math.round(returned/closed*100) : 0}%</div><div class="l">Return rate on closed cases</div></div>
+  </div>
+  <div class="grid g2">
+    <section class="card stack">
+      <div class="head"><h3>Needs a person</h3><a href="#queue" class="small">Open match queue</a></div>
+      ${ready.map(r => { const c = candidatesFor(r, I)[0]; return `<div class="li">${thumb(c.f)}<div><b>${esc(r.title)}</b><div class="small muted"><span class="refid">${r.id}</span> ↔ <span class="tagid">${c.f.id}</span></div></div><span class="conf c-high" style="font-size:22px">${Math.round(c.m.score*100)}%</span></div>`; }).join('')}
+      ${pro.map(f => { const p = manifestFor(f); return `<div class="li">${thumb(f)}<div><b>${esc(f.title)}</b><div class="small muted"><span class="tagid">${f.id}</span> · seat ${f.seat} on ${f.flight}. Booking ${p.pnr} found, not yet reported lost</div></div><a class="pill p-warn" href="#queue">Tell passenger</a></div>`; }).join('')}
+      ${kaa.map(f => `<div class="li">${thumb(f)}<div><b>${esc(f.title)}</b><div class="small muted"><span class="tagid">${f.id}</span> · held by KAA, handover to KQ pending</div></div><a class="btn small" href="#items">Open</a></div>`).join('')}
+      ${!ready.length && !pro.length && !kaa.length ? '<p class="muted">Nothing waiting. New matches appear here automatically.</p>' : ''}
+    </section>
+    <section class="card stack">
+      <div class="head"><h3>90-day holding clock</h3><a href="#customs" class="small">Customs handover</a></div>
+      ${aging.length ? aging.map(f => `<div class="li">${thumb(f)}<div><b>${esc(f.title)}</b><div class="small muted"><span class="tagid">${f.id}</span> · ${esc(f.spot)}</div></div><div style="width:170px">${clock(f)}</div></div>`).join('') : '<p class="muted">No items past day 60.</p>'}
+      <p class="hint">KQ policy: unclaimed items are held up to 90 days, then itemised and handed to Customs.</p>
+    </section>
+    <section class="card stack">
+      <h3>In custody by station</h3>
+      <div class="bars" style="grid-template-columns:auto 1fr auto;font-size:14px">${stations.map(([s,n]) => `<span class="mono">${s}</span><div class="bar" style="height:10px"><i style="width:${n/maxS*100}%"></i></div><span class="num">${n}</span>`).join('')}</div>
+    </section>
+    <section class="card stack">
+      <div class="head"><h3>Latest activity</h3><a href="#audit" class="small">Full audit trail</a></div>
+      <div class="feed">${S.audit.slice().sort((a,b)=>b.t-a.t).slice(0,6).map(a => `<div><span class="small muted">${ago(a.t)}</span><span>${esc(a.action)} <span class="small muted">· ${esc(a.actor)}</span></span></div>`).join('')}</div>
+    </section>
+  </div>`;
+};
+
+function candHTML(r, c, i){
+  const m = c.m, b = band(m.score), held = r.matchedItem === c.f.id;
+  return `<div class="cand ${i===0?'best':''}">
+    <div class="li top-al">
+      ${thumb(c.f)}<div><b>${esc(c.f.title)}</b><div class="small muted"><span class="tagid">${c.f.id}</span> · ${esc(c.f.spot)}${c.f.flight?' · '+c.f.flight:''}${c.f.seat?' seat '+c.f.seat:''} · ${STATIONS[c.f.station]}</div><div class="small">${esc(c.f.desc)}</div></div>
+      <div style="text-align:right"><div class="conf c-${b}">${Math.round(m.score*100)}%</div><div class="small muted">${b} confidence</div></div>
+    </div>
+    <div class="bars">${m.parts.map(p => `<span>${p.label}</span><div class="bar"><i style="width:${Math.round(p.s*100)}%"></i></div><span class="muted">${esc(p.note || Math.round(p.s*100)+'%')}</span>`).join('')}</div>
+    <div class="row">
+      ${held ? `<button class="btn pri" data-act="release" data-r="${r.id}" data-f="${c.f.id}">Verify &amp; release</button><button class="btn ghost" data-act="fail" data-r="${r.id}" data-f="${c.f.id}">Claim did not check out</button>`
+             : r.status === 'open' ? `<button class="btn pri" data-act="notify" data-r="${r.id}" data-f="${c.f.id}">Hold item &amp; notify passenger</button><button class="btn ghost" data-act="dismiss" data-r="${r.id}" data-f="${c.f.id}">Not a match</button>` : ''}
+    </div></div>`;
+}
+VIEWS.queue = () => {
+  const I = idf();
+  const reps = S.reports.filter(r => r.status !== 'returned').sort((a,b) => {
+    const sa = (candidatesFor(a,I)[0]||{m:{score:0}}).m.score, sb = (candidatesFor(b,I)[0]||{m:{score:0}}).m.score; return sb - sa; });
+  const pro = proactiveList();
+  return `<div class="head"><div><h2>Match queue</h2><p class="muted">Each open report with the found items most likely to be it, best first. Staff confirm every match; nothing is released automatically.</p></div></div>
+  ${pro.length ? `<section class="stack"><h3>Tell the passenger before they ask</h3>${pro.map(f => { const p = manifestFor(f); return `
+    <div class="match"><div class="lhs stack"><span class="pill p-warn" style="justify-self:start">Seat match from booking manifest</span><div class="li">${thumb(f)}<div><b>${esc(f.title)}</b><div class="small muted"><span class="tagid">${f.id}</span> · found ${ago(f.foundAt)}</div></div><span></span></div><p class="small">${esc(f.desc)}</p></div>
+    <div class="stack"><p>Found in <b>seat ${f.seat}</b> on <b>${f.flight}</b> (${p.route}). The booking system shows this seat was held by <b>${p.first} ${p.last[0]}.</b>, booking <span class="refid">${p.pnr}</span>, reachable by ${p.channel}.</p>
+    <p class="small muted">The passenger has not reported anything yet. Tafuta sends a message that names the flight but not the item, so only the real owner can describe it.</p>
+    <div class="row"><button class="btn amb" data-act="proactive" data-f="${f.id}">Send proactive message</button></div></div></div>`; }).join('')}</section>` : ''}
+  <section class="stack"><h3>Passenger reports</h3>
+  ${reps.map(r => { const cs = candidatesFor(r, I).slice(0,3); return `
+    <div class="match"><div class="lhs stack">
+      <div class="row" style="justify-content:space-between"><span class="refid">${r.id}</span>${repPill[r.status]}</div>
+      <div><b>${esc(r.title)}</b><p class="small">${esc(r.desc)}</p></div>
+      <div class="small muted">${esc(r.name)} · ${r.pnr ? 'Booking '+r.pnr+' · ' : ''}${r.flight||''}${r.seat?' seat '+r.seat:''} · reported ${ago(r.reportedAt)} via ${esc(r.channel)}</div>
+    </div><div class="stack">${cs.length ? cs.map((c,i) => candHTML(r,c,i)).join('') : '<p class="muted">No likely match yet. This report is re-checked automatically every time a new item is logged anywhere on the network.</p>'}</div></div>`; }).join('')}
+  </section>`;
+};
+BIND.queue = () => {
+  $('#app').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const r = findRep(b.dataset.r), f = findItem(b.dataset.f), a = b.dataset.act;
+    if (a === 'notify'){
+      r.status = 'notified'; r.matchedItem = f.id; f.status = 'on_hold'; f.matchedReport = r.id;
+      notify(r, `Jambo ${r.name.split(' ')[0]}, we may have found your ${r.title.toLowerCase()} (ref ${r.id}). Please bring your ID and boarding pass to the KQ Lost & Found desk at ${STATIONS[f.station]}, or reply to have it forwarded to you.`);
+      log(OFFICER, `Held ${f.id} and notified passenger`, r.id); save(); render(); toast('Passenger notified by ' + r.channel);
+    } else if (a === 'dismiss'){
+      r.dismissed.push(f.id); log(OFFICER, `Marked ${f.id} as not a match`, r.id); save(); render();
+    } else if (a === 'fail'){
+      r.status = 'open'; r.matchedItem = null; r.dismissed.push(f.id); f.status = 'in_custody'; f.matchedReport = null;
+      log(OFFICER, `Claim on ${f.id} failed verification; item back in custody`, r.id); save(); render();
+    } else if (a === 'release'){ releaseModal(r, f); }
+    else if (a === 'proactive'){
+      const p = manifestFor(f); f.proactive = {t:Date.now(), pnr:p.pnr};
+      const id = f.station + 'KQ' + (S.seq.report++);
+      S.reports.push({id, pnr:p.pnr, name:p.first+' '+p.last, contact:p.contact, channel:p.channel, flight:p.flight, seat:p.seat, station:f.station, cat:f.cat, title:'Item left at seat '+p.seat, desc:'Opened proactively from a seat match. Passenger to describe the item.', colour:'', brand:'', lostAt:p.dep, reportedAt:Date.now(), status:'notified', matchedItem:f.id, dismissed:[], proactive:true});
+      f.status = 'on_hold'; f.matchedReport = id;
+      S.notices.push({t:Date.now(), to:p.first+' '+p.last+' · '+p.channel, ref:id, msg:`Jambo ${p.first}, our crew found an item at your seat (${p.seat}) after flight ${p.flight}. If you're missing something, reply with a short description and we'll arrange its return. Ref ${id}.`});
+      log('Tafuta engine', `Proactive message sent to booking ${p.pnr} for ${f.id}`, id); save(); render(); toast('Proactive message sent by ' + p.channel);
+    }
+  });
+};
+
+function releaseModal(r, f){
+  const pnrOk = !!MANIFEST.find(p => p.pnr === r.pnr);
+  $('#layer').innerHTML = `<div class="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="rl-h">
+    <div class="head"><h3 id="rl-h">Verify ownership &amp; release</h3><span class="tagid">${f.id}</span></div>
+    <p class="small muted">Replaces the paper Lost &amp; Found Release Form. The passenger gets a copy by ${esc(r.channel)}.</p>
+    <div class="callout acc small"><b>Staff-only check.</b> Ask the passenger to describe this without prompting: <i>${esc(f.private || 'no private detail recorded')}</i></div>
+    <form id="rf" class="stack">
+      <label class="check"><input type="checkbox" id="c1"> Valid ID sighted (National ID or passport) and name matches ${esc(r.name)}</label>
+      <label class="check"><input type="checkbox" id="c2" ${pnrOk?'checked':''}> Proof of travel: ${pnrOk ? `booking <span class="refid">${r.pnr}</span> confirmed through the booking system` : 'boarding pass or ticket sighted'}</label>
+      <label class="check"><input type="checkbox" id="c3"> Passenger described the private detail correctly</label>
+      <div class="fgrid">
+        <div class="f"><label for="rm">Return method</label><select id="rm"><option>Collected at desk, ${STATIONS[f.station]}</option><option>Forwarded on a KQ flight to the passenger's station</option><option>Courier to passenger's address</option><option>Collected by an authorised person</option></select></div>
+        <div class="f"><label for="rc">Condition at release</label><input type="text" id="rc" value="As found, no damage"></div>
+      </div>
+      <div class="f"><label for="rs">Passenger signature (type full name)</label><input type="text" id="rs" placeholder="${esc(r.name)}"></div>
+      <div class="row" style="justify-content:flex-end"><button type="button" class="btn ghost" id="rx">Cancel</button><button class="btn pri" id="rok" disabled>Release item</button></div>
+    </form></div></div>`;
+  const chk = () => $('#rok').disabled = !($('#c1').checked && $('#c2').checked && $('#c3').checked && $('#rs').value.trim().length > 2);
+  ['#c1','#c2','#c3','#rs'].forEach(s => $(s).addEventListener('input', chk));
+  $('#rx').onclick = () => $('#layer').innerHTML = '';
+  $('#rf').onsubmit = e => { e.preventDefault();
+    r.status = 'returned'; r.release = {t:Date.now(), method:$('#rm').value, by:$('#rs').value.trim(), condition:$('#rc').value, officer:OFFICER};
+    f.status = 'released'; f.chain.push({t:Date.now(), from:f.custodian, to:'Owner: ' + r.name, by:OFFICER});
+    notify(r, `Your ${r.title.toLowerCase()} (ref ${r.id}) has been released: ${r.release.method}. Your copy of the release form is attached. Asante for flying with us.`);
+    log(OFFICER, `Released ${f.id} after ID, travel and private-detail checks; e-signed by ${r.release.by}`, r.id);
+    save(); $('#layer').innerHTML = ''; render(); toast('Released and logged');
+  };
+}
+
+VIEWS.items = () => {
+  const I = idf();
+  return `<div class="head"><div><h2>Custody register</h2><p class="muted">Every item from logging to resolution, with who holds it right now.</p></div>
+  <div class="row"><input type="text" id="q" placeholder="Search items, tags, flights" aria-label="Search custody register" style="min-width:240px"><select id="fs" aria-label="Filter by status"><option value="">All statuses</option><option value="in_custody">In custody</option><option value="on_hold">Held for claim</option><option value="released">Returned</option><option value="customs">Handed to Customs</option></select></div></div>
+  <div class="card tbl" style="padding:0"><table><thead><tr><th>Item</th><th>Found</th><th>Custodian</th><th>Holding clock</th><th>Status</th><th>Best open match</th></tr></thead><tbody id="tb">
+  ${S.found.slice().sort((a,b)=>b.foundAt-a.foundAt).map(f => { const bm = f.status==='in_custody' ? bestFor(f, I) : null; return `<tr data-s="${f.status}" data-q="${esc((f.id+' '+f.title+' '+f.desc+' '+f.flight+' '+f.spot).toLowerCase())}">
+    <td><div class="row" style="flex-wrap:nowrap;align-items:flex-start">${thumb(f)}<div><b>${esc(f.title)}</b><div><span class="tagid">${f.id}</span></div></div></div></td>
+    <td class="small">${fmt(f.foundAt)}<br><span class="muted">${esc(f.spot)}${f.flight?' · '+f.flight:''}${f.seat?' '+f.seat:''}<br>by ${esc(f.foundBy)}</span></td>
+    <td class="small">${esc(f.custodian)}${f.status==='in_custody'&&f.custodian===KAA_CUSTODY?`<br><button class="btn small" data-hand="${f.id}" style="margin-top:6px">Record handover to KQ</button>`:''}</td>
+    <td style="min-width:160px">${f.status==='in_custody'||f.status==='on_hold'?clock(f):'<span class="small muted">Closed</span>'}</td>
+    <td>${statusPill[f.status]}</td>
+    <td class="small">${bm ? `<span class="refid">${bm.r.id}</span> <b class="c-${band(bm.m.score)}">${Math.round(bm.m.score*100)}%</b>` : f.matchedReport ? `<span class="refid">${f.matchedReport}</span>` : '<span class="muted">None yet</span>'}</td></tr>`; }).join('')}
+  </tbody></table></div>`;
+};
+BIND.items = () => {
+  const filt = () => { const q = $('#q').value.toLowerCase(), s = $('#fs').value;
+    document.querySelectorAll('#tb tr').forEach(tr => tr.style.display = (!q || tr.dataset.q.includes(q)) && (!s || tr.dataset.s === s) ? '' : 'none'); };
+  $('#q').oninput = filt; $('#fs').onchange = filt;
+  document.querySelectorAll('[data-hand]').forEach(b => b.onclick = () => {
+    const f = findItem(b.dataset.hand); f.chain.push({t:Date.now(), from:KAA_CUSTODY, to:KQ_CUSTODY, by:'KAA officer + ' + OFFICER});
+    f.custodian = KQ_CUSTODY; log(OFFICER, 'Received item from KAA Security; custody transferred and countersigned', f.id); save(); render(); toast('Custody transferred to KQ'); });
+};
+
+VIEWS.log = () => `
+  <div class="head"><div><h2>Log a found item</h2><p class="muted">Takes under a minute on a phone at the aircraft door or gate. Matching runs the moment it's saved.</p></div></div>
+  <form id="lf" class="card stack">
+    <div class="fgrid">
+      <div class="f"><label for="l-cat">Category</label><select id="l-cat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="f"><label for="l-title">What is it?</label><input type="text" id="l-title" required placeholder="e.g. Black Samsung phone"></div>
+      <div class="f"><label for="l-col">Main colour</label><select id="l-col"><option value="">Not sure</option>${Object.keys(COLOURS).map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="f"><label for="l-brand">Brand (if visible)</label><input type="text" id="l-brand"></div>
+    </div>
+    <div class="f"><label for="l-desc">Description</label><textarea id="l-desc" required placeholder="Marks, stickers, case, contents. Leave out anything you'll use to check ownership."></textarea></div>
+    <div class="f"><label for="l-priv">Private detail for ownership check (staff only)</label><input type="text" id="l-priv" placeholder="e.g. initials engraved inside, lock-screen photo"><span class="hint">Never shown to passengers. Used to tell the real owner from a lucky guess.</span></div>
+    <div class="fgrid">
+      <div class="f"><label for="l-st">Station</label><select id="l-st">${Object.entries(STATIONS).map(([k,v])=>`<option value="${k}">${k} · ${v}</option>`).join('')}</select></div>
+      <div class="f"><label for="l-spot">Where exactly</label><select id="l-spot"><option>Aircraft cabin</option><option>Boarding gate</option><option>KQ lounge</option><option>Security screening</option><option>Baggage reclaim</option><option>Check-in counter</option><option>KQ sales office</option></select></div>
+      <div class="f"><label for="l-fl">Flight (cabin finds)</label><input type="text" id="l-fl" placeholder="KQ101"></div>
+      <div class="f"><label for="l-seat">Seat</label><input type="text" id="l-seat" placeholder="22C"></div>
+    </div>
+    <div class="fgrid">
+      <div class="f"><label for="l-by">Found by</label><select id="l-by"><option>Cabin crew</option><option>Cabin cleaning</option><option>Gate agent</option><option>Lounge staff</option><option>Ground handling</option><option>Sales office staff</option><option>KAA Security</option></select></div>
+      <div class="f"><label for="l-ph">Photo</label><input type="file" id="l-ph" accept="image/*"><span class="hint">In production, image recognition reads brand, colour and category from this photo.</span></div>
+    </div>
+    <div class="row"><button class="btn pri">Save and run matching</button><button type="button" class="btn ghost" id="l-demo">Fill a sample item</button></div>
+  </form>
+  <div id="lres"></div>`;
+BIND.log = () => {
+  let photo = '';
+  $('#l-ph').onchange = e => { const file = e.target.files[0]; if (!file) return;
+    const img = new Image(); img.onload = () => { const c = document.createElement('canvas'), k = Math.min(1, 240/Math.max(img.width,img.height));
+      c.width = img.width*k; c.height = img.height*k; c.getContext('2d').drawImage(img,0,0,c.width,c.height); photo = c.toDataURL('image/jpeg',.7); URL.revokeObjectURL(img.src); };
+    img.src = URL.createObjectURL(file); };
+  $('#l-demo').onclick = () => { $('#l-cat').value='Bags & luggage'; $('#l-title').value='Black leather handbag'; $('#l-col').value='black'; $('#l-brand').value='';
+    $('#l-desc').value='Black leather handbag with a gold zip and a short strap. Found under the seats at the gate.'; $('#l-priv').value='Inside pocket has a Nairobi gym card'; $('#l-st').value='NBO'; $('#l-spot').value='Boarding gate'; $('#l-fl').value=''; $('#l-seat').value=''; $('#l-by').value='Gate agent'; };
+  $('#lf').onsubmit = e => { e.preventDefault();
+    const st = $('#l-st').value, n = S.seq.found[st]++;
+    const by = $('#l-by').value;
+    const f = {id:`FND-${st}-${String(n).padStart(5,'0')}`, cat:$('#l-cat').value, title:$('#l-title').value.trim(), desc:$('#l-desc').value.trim(), colour:$('#l-col').value, brand:$('#l-brand').value.trim(),
+      station:st, spot:$('#l-spot').value + ($('#l-spot').value==='Aircraft cabin'?'':', '+STATIONS[st]), flight:$('#l-fl').value.trim().toUpperCase(), seat:$('#l-seat').value.trim().toUpperCase(), foundBy:by, foundAt:Date.now(),
+      private:$('#l-priv').value.trim(), photo, status:'in_custody', custodian: by==='KAA Security' ? KAA_CUSTODY : KQ_CUSTODY, chain:[], matchedReport:null};
+    f.chain.push({t:Date.now(), from:'Found by ' + by, to:f.custodian, by});
+    S.found.push(f); log(by + ' · ' + st, 'Logged found item', f.id);
+    const I = idf();
+    const hits = S.reports.filter(r => r.status === 'open').map(r => ({r, m:scorePair(r,f,I)})).filter(x => x.m && x.m.score >= 0.55).sort((a,b)=>b.m.score-a.m.score);
+    hits.filter(h => h.m.score >= 0.75).forEach(h => log('Tafuta engine', `Auto-alert: ${Math.round(h.m.score*100)}% match with ${f.id}`, h.r.id));
+    const p = manifestFor(f); save();
+    $('#lf').reset(); photo = '';
+    $('#lres').innerHTML = `<div class="card stack"><div class="row"><span class="pill p-good">Saved</span><span class="tagid">${f.id}</span><span class="muted small">Print this code on the item's tag.</span></div>
+      ${hits.length ? `<p><b>${hits.length} open report${hits.length>1?'s':''} look like this item.</b></p>${hits.map(h=>`<div class="row"><span class="refid">${h.r.id}</span> ${esc(h.r.title)} · <b class="c-${band(h.m.score)}">${Math.round(h.m.score*100)}%</b></div>`).join('')}<a class="btn pri" href="#queue" style="justify-self:start">Review in match queue</a>`
+      : p ? `<p><b>No report yet, but the booking system knows who sat in ${f.seat}.</b> You can message them from the match queue.</p><a class="btn amb" href="#queue" style="justify-self:start">Open match queue</a>`
+      : '<p class="muted">No open report matches yet. Tafuta will alert the team as soon as a passenger reports something similar.</p>'}</div>`;
+    render(); $('#lres') || 0; toast('Logged ' + f.id);
+  };
+};
+/* keep the result panel after re-render on the log view */
+const _renderLog = VIEWS.log;
+
+VIEWS.customs = () => {
+  const due = S.found.filter(f => f.status === 'in_custody' && daysIn(f) >= HOLD_DAYS);
+  const soon = S.found.filter(f => f.status === 'in_custody' && daysIn(f) >= 75 && daysIn(f) < HOLD_DAYS);
+  const handed = S.found.filter(f => f.status === 'customs');
+  return `<div class="head"><div><h2>Customs handover</h2><p class="muted">After 90 days unclaimed items are itemised and handed to Customs. Tafuta writes the manifest and keeps the record archived.</p></div>
+  <button class="btn amb" id="cm" ${due.length?'':'disabled'}>Generate manifest (${due.length})</button></div>
+  <div class="grid g2">
+  <section class="card stack"><h3>Due now</h3>${due.length ? due.map(f => `<div class="li">${thumb(f)}<div><b>${esc(f.title)}</b><div class="small muted"><span class="tagid">${f.id}</span> · found ${fmtD(f.foundAt)} · day ${daysIn(f)}</div></div><span></span></div>`).join('') : '<p class="muted">Nothing due.</p>'}</section>
+  <section class="card stack"><h3>Due within 15 days</h3>${soon.length ? soon.map(f => `<div class="li">${thumb(f)}<div><b>${esc(f.title)}</b><div class="small muted"><span class="tagid">${f.id}</span> · ${HOLD_DAYS - daysIn(f)} days left</div></div><span></span></div>`).join('') : '<p class="muted">Nothing in the next 15 days.</p>'}
+  <p class="hint">Before handover, Tafuta re-runs matching on these items one last time.</p></section>
+  ${handed.length ? `<section class="card stack"><h3>Handed over</h3>${handed.map(f => `<div class="small"><span class="tagid">${f.id}</span> ${esc(f.title)} · ${fmtD(f.customsAt)}</div>`).join('')}</section>` : ''}
+  </div>`;
+};
+BIND.customs = () => {
+  const b = $('#cm'); if (!b) return;
+  b.onclick = () => {
+    const due = S.found.filter(f => f.status === 'in_custody' && daysIn(f) >= HOLD_DAYS);
+    const txt = `KENYA AIRWAYS SECURITY · UNCLAIMED PROPERTY MANIFEST\nPrepared ${fmtD(Date.now())} by ${OFFICER}\n\n` + due.map((f,i) => `${i+1}. ${f.id} | ${f.cat} | ${f.title} | ${f.colour||'-'} | found ${fmtD(f.foundAt)} at ${f.spot} | held ${daysIn(f)} days`).join('\n') + `\n\nTotal items: ${due.length}\nReceived by Customs officer: ____________________`;
+    $('#layer').innerHTML = `<div class="scrim"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="cm-h"><h3 id="cm-h">Customs manifest</h3>
+      <textarea id="mt" style="min-height:220px;font-family:var(--mono);font-size:12.5px" readonly>${esc(txt)}</textarea>
+      <div class="row" style="justify-content:flex-end"><button class="btn ghost" id="mx">Close</button><button class="btn" id="mc">Copy</button><button class="btn pri" id="mh">Mark items as handed over</button></div></div></div>`;
+    $('#mx').onclick = () => $('#layer').innerHTML = '';
+    $('#mc').onclick = async () => { try{ await navigator.clipboard.writeText(txt); toast('Manifest copied'); }catch(e){ $('#mt').select(); toast('Select all and copy'); } };
+    $('#mh').onclick = () => { due.forEach(f => { f.status = 'customs'; f.customsAt = Date.now(); f.chain.push({t:Date.now(), from:f.custodian, to:'Kenya Customs', by:OFFICER}); log(OFFICER, 'Handed to Customs after 90 days; record archived', f.id); });
+      save(); $('#layer').innerHTML = ''; render(); toast(due.length + ' item(s) handed to Customs'); };
+  };
+};
+
+VIEWS.audit = () => `<div class="head"><div><h2>Audit trail &amp; passenger messages</h2><p class="muted">Every action, who did it and when. Nothing can be edited after the fact.</p></div></div>
+  <div class="grid g2" style="align-items:start">
+  <section class="card tbl" style="padding:0"><table><thead><tr><th>When</th><th>Who</th><th>What</th><th>Ref</th></tr></thead><tbody>
+  ${S.audit.slice().sort((a,b)=>b.t-a.t).map(a => `<tr><td class="small num" style="white-space:nowrap">${fmt(a.t)}</td><td class="small">${esc(a.actor)}</td><td class="small">${esc(a.action)}</td><td>${a.ref.startsWith('FND')?`<span class="tagid">${a.ref}</span>`:`<span class="refid">${a.ref}</span>`}</td></tr>`).join('')}
+  </tbody></table></section>
+  <section class="card stack"><h3>Messages sent (simulated)</h3><p class="hint">In production these go out through KQ's existing WhatsApp, SMS and email notification channels.</p>
+  ${S.notices.slice().sort((a,b)=>b.t-a.t).map(n => `<div class="stack" style="gap:4px"><span class="small muted">${fmt(n.t)} · to ${esc(n.to)}</span><div class="msg">${esc(n.msg)}</div></div>`).join('')}
+  </section></div>`;
+
+VIEWS.fit = () => `<div class="head"><div><h2>How Tafuta fits Kenya Airways</h2><p class="muted">Built around KQ's published Lost &amp; Found policy, so staff keep the steps they know and lose the manual work.</p></div></div>
+  <div class="grid g2">
+  <section class="card stack"><h3>Today</h3><ol class="flow">
+    <li>Passenger reports at a KQ Customer Service Desk or calls the contact centre.</li>
+    <li>The agent phones the Security Control Room to ask if anything was handed in.</li>
+    <li>Items found by KAA in the terminal stay with KAA until KQ Security goes to collect them.</li>
+    <li>Staff search shelves and paper logs by hand. No matching, no reference number for the passenger.</li>
+    <li>Release needs ID, proof of travel and a paper release form.</li>
+    <li>After 90 days unclaimed items are listed by hand and handed to Customs.</li></ol></section>
+  <section class="card stack"><h3>With Tafuta</h3><ol class="flow new">
+    <li>Passenger reports in the KQ app, on the website or by WhatsApp with their booking reference. They get a tracking reference straight away.</li>
+    <li>Every found item is logged with photo, flight and seat at the point it's found. Matching runs instantly, network-wide.</li>
+    <li>Cabin finds with a seat number are matched to the booking manifest, so the passenger can be told before they notice.</li>
+    <li>KAA and KQ share one custody record. Each handover is logged and countersigned.</li>
+    <li>Release uses the same checks, done digitally: ID sighted, booking confirmed automatically, a private detail only the owner knows, e-signature.</li>
+    <li>The Customs manifest writes itself on day 90, and every record stays searchable.</li></ol></section>
+  </div>
+  <section class="card stack"><h3>Where it plugs in</h3><div class="integ">
+    <div><b>Booking system (PSS)</b><span class="small">Look up a booking and seat manifest by flight. Built as an adapter, so it works on the current Amadeus Altéa setup and on Sabre after the migration KQ announced in September 2026.</span></div>
+    <div><b>KQ app &amp; website</b><span class="small">The passenger form and tracker are a small web module and API that can sit inside the rebuilt KQ app or the Manage Booking page.</span></div>
+    <div><b>WhatsApp, SMS, email</b><span class="small">Messages go out through the channels KQ already uses for flight alerts, including the +254 705 474 747 WhatsApp line.</span></div>
+    <div><b>SITA WorldTracer</b><span class="small">Passenger references follow the WorldTracer pattern (station + KQ + number) baggage staff already know. Optional sync for items that turn up in baggage.</span></div>
+    <div><b>KAA Security, JKIA</b><span class="small">A KAA login to log items and confirm handovers, so terminal finds reach KQ with a chain of custody.</span></div>
+    <div><b>Staff sign-in &amp; data</b><span class="small">Single sign-on with KQ staff accounts. Role-based access, full audit trail, retention rules in line with Kenya's Data Protection Act, 2019.</span></div>
+  </div></section>
+  <section class="card stack"><h3>How the matching works</h3>
+  <p>Each report is scored against every item in custody on six signals: category, description (weighted text similarity with airline-specific synonyms, so "rucksack" finds "backpack"), colour family, brand, where it was lost (same flight and seat scores highest) and time. Staff see the score and the reason for it, and confirm every match. In production the photo goes through image recognition to fill in brand, colour and category automatically, and the text model is upgraded to multilingual embeddings for English and Swahili reports.</p></section>`;
+
+/* ---------- passenger views ---------- */
+VIEWS.report = () => `
+  <div class="head"><div><h2>Lost something on your journey?</h2><p class="muted">Tell us what it is. We check it against everything found on our aircraft, gates, lounges and offices, and keep checking for 90 days.</p></div></div>
+  <form id="pf" class="card stack" style="max-width:760px">
+    <div class="fgrid">
+      <div class="f"><label for="p-pnr">Booking reference</label><input type="text" id="p-pnr" maxlength="6" placeholder="6 characters, e.g. B8LK3S" autocomplete="off"></div>
+      <div class="f"><label for="p-last">Last name</label><input type="text" id="p-last" placeholder="As on your booking"></div>
+    </div>
+    <div class="row"><button type="button" class="btn" id="p-find">Find my flight</button><span id="p-bk" class="small muted">Demo bookings: B8LK3S Njeri, K7QM2D Kamau</span></div>
+    <div class="fgrid">
+      <div class="f"><label for="p-fl">Flight</label><input type="text" id="p-fl" placeholder="KQ418"></div>
+      <div class="f"><label for="p-seat">Seat (if lost on board)</label><input type="text" id="p-seat"></div>
+      <div class="f"><label for="p-st">Airport</label><select id="p-st">${Object.entries(STATIONS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+    </div>
+    <div class="fgrid">
+      <div class="f"><label for="p-cat">What kind of item?</label><select id="p-cat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="f"><label for="p-title">Short name</label><input type="text" id="p-title" required placeholder="e.g. Black leather handbag"></div>
+      <div class="f"><label for="p-col">Main colour</label><select id="p-col"><option value="">Not sure</option>${Object.keys(COLOURS).map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="f"><label for="p-brand">Brand</label><input type="text" id="p-brand"></div>
+    </div>
+    <div class="f"><label for="p-desc">Describe it</label><textarea id="p-desc" required placeholder="Anything that makes it yours: stickers, case, contents, where you last had it."></textarea></div>
+    <div class="fgrid">
+      <div class="f"><label for="p-name">Your name</label><input type="text" id="p-name" required></div>
+      <div class="f"><label for="p-con">Phone or email</label><input type="text" id="p-con" required></div>
+      <div class="f"><label for="p-ch">Send updates by</label><select id="p-ch"><option>WhatsApp</option><option>SMS</option><option>Email</option><option>KQ app</option></select></div>
+    </div>
+    <label class="check"><input type="checkbox" id="p-ok" required> I agree that my details are used only to find and return this item.</label>
+    <div class="row"><button class="btn pri">Submit report</button></div>
+  </form><div id="pres"></div>`;
+BIND.report = () => {
+  $('#p-find').onclick = () => {
+    const p = MANIFEST.find(x => x.pnr === $('#p-pnr').value.trim().toUpperCase() && x.last.toLowerCase() === $('#p-last').value.trim().toLowerCase());
+    if (!p){ $('#p-bk').textContent = 'No booking found. Check the reference and last name, or fill in your flight below.'; return; }
+    $('#p-fl').value = p.flight; $('#p-seat').value = p.seat; $('#p-name').value = p.first + ' ' + p.last; $('#p-con').value = p.contact; $('#p-ch').value = p.channel;
+    $('#p-st').value = p.route.split('–')[1] in STATIONS ? p.route.split('–')[1] : 'NBO';
+    $('#p-bk').innerHTML = `Found <b>${p.flight}</b> ${p.route}, seat ${p.seat}, ${fmtD(p.dep)}.`;
+  };
+  $('#pf').onsubmit = e => { e.preventDefault();
+    const st = $('#p-st').value, id = st + 'KQ' + (S.seq.report++);
+    const p = MANIFEST.find(x => x.pnr === $('#p-pnr').value.trim().toUpperCase());
+    const r = {id, pnr:$('#p-pnr').value.trim().toUpperCase(), name:$('#p-name').value.trim(), contact:$('#p-con').value.trim(), channel:$('#p-ch').value, flight:$('#p-fl').value.trim().toUpperCase(), seat:$('#p-seat').value.trim().toUpperCase(),
+      station:st, cat:$('#p-cat').value, title:$('#p-title').value.trim(), desc:$('#p-desc').value.trim(), colour:$('#p-col').value, brand:$('#p-brand').value.trim(),
+      lostAt: p ? p.dep : Date.now() - 6*HOUR, reportedAt:Date.now(), status:'open', matchedItem:null, dismissed:[]};
+    S.reports.push(r); log(r.name + ' (' + r.channel + ')', 'Reported lost item', id);
+    const top = candidatesFor(r)[0];
+    if (top && top.m.score >= 0.75) log('Tafuta engine', `Auto-alert: ${Math.round(top.m.score*100)}% match with ${top.f.id}`, id);
+    S.notices.push({t:Date.now(), to:r.name+' · '+r.channel, ref:id, msg:`We've received your report (ref ${id}). We're checking it against items found across the Kenya Airways network and will message you here as soon as there's a likely match.`});
+    save();
+    $('#pf').style.display = 'none';
+    $('#pres').innerHTML = `<div class="card stack" style="max-width:760px"><h3>Report received</h3><p>Your reference is <span class="refid" style="font-size:15px">${id}</span>. We've sent it to you by ${esc(r.channel)}.</p>
+      <p class="muted">We'll message you if a likely match is found. To collect, bring a valid ID and your boarding pass or booking reference. If you've travelled on, we can forward the item to your station.</p>
+      <div class="row"><a class="btn pri" href="#track" onclick="sessionStorage && (window.__ref='${id}')">Track this report</a><button class="btn ghost" onclick="location.hash='overview'">See it in the staff console</button></div></div>`;
+  };
+};
+
+VIEWS.track = () => `<div class="head"><div><h2>Track my report</h2><p class="muted">Enter the reference we sent you.</p></div></div>
+  <form id="tf" class="card row" style="max-width:760px"><input type="text" id="t-ref" placeholder="e.g. NBOKQ10452" style="max-width:260px" aria-label="Report reference"><button class="btn pri">Check status</button><span class="small muted">Try NBOKQ10452 or NBOKQ10483</span></form>
+  <div id="tres"></div>`;
+BIND.track = () => {
+  const show = ref => {
+    const r = findRep(ref.trim().toUpperCase());
+    if (!r){ $('#tres').innerHTML = '<div class="card" style="max-width:760px">We couldn\'t find that reference. Check it matches the message we sent, for example NBOKQ10452.</div>'; return; }
+    const stage = r.status === 'returned' ? 3 : r.status === 'notified' ? 2 : 1;
+    const steps = [['Report received', fmt(r.reportedAt)], ['Checking found items across the network', 'Re-checked whenever a new item is logged'], ['Possible match: we\'ve contacted you', 'Bring a valid ID and your boarding pass, or reply to arrange forwarding'], ['Returned to you', r.release ? fmt(r.release.t) + ' · ' + r.release.method : '']];
+    $('#tres').innerHTML = `<div class="card stack" style="max-width:760px"><div class="row" style="justify-content:space-between"><b>${esc(r.title)}</b><span class="refid">${r.id}</span></div>
+      <div class="tl">${steps.map((s,i) => `<div class="${i<stage?'done':i===stage?'now':''}"><span class="dot"></span><div><b>${s[0]}</b><div class="small muted">${i<=stage?esc(s[1]):''}</div></div></div>`).join('')}</div>
+      <p class="hint">For security we don't show photos or details of found items here. Staff check ownership in person.</p></div>`;
+  };
+  $('#tf').onsubmit = e => { e.preventDefault(); show($('#t-ref').value); };
+  if (window.__ref){ $('#t-ref').value = window.__ref; show(window.__ref); window.__ref = null; }
+};
+
+render();
+</script>
+</body>
+</html>
